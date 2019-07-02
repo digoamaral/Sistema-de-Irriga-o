@@ -1,0 +1,307 @@
+// --- Bibliotecas Auxiliares ---
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>                             
+    
+// --- Hardware do LCD ---
+LiquidCrystal_I2C disp(0x27,2,1,0,4,5,6,7,3, POSITIVE);
+
+
+#define butR    10 //fio branco                                   
+#define butE    11 //fio marrom                                  
+#define butL    12 // fio cinza
+#define led_vermelho 42 
+#define led_verde 48
+#define sensor A0
+
+
+void changeMenu();                                     
+void dispMenu();                                        
+void planta_a();                                      
+void planta_b();                                    
+void planta_c();
+void apagaleds();
+void planta1();
+void planta2();
+void planta3();
+void mostrar_valores ();
+
+
+char menu = 0x01;                                       
+boolean t_butR, t_butE, t_butL;                             
+
+int valor_sensor;
+
+const int bomba_LED = 30; 
+
+int x = 1;
+
+
+// --- Configura��es Iniciais ---
+void setup()
+{
+  
+  digitalWrite(49,HIGH);
+
+  delay(10);
+  
+  disp.begin(16,2);                                     
+  
+  pinMode(12, INPUT_PULLUP);    
+  pinMode(10, INPUT_PULLUP);  
+  pinMode(11, INPUT_PULLUP);
+  pinMode(49, OUTPUT);
+
+  
+  
+  pinMode(led_vermelho, OUTPUT);
+  pinMode(led_verde, OUTPUT);
+
+  pinMode(sensor, INPUT);
+  pinMode(bomba_LED, OUTPUT);
+ 
+  t_butR   = 0x00;                                      
+  t_butE   = 0x00;                                     
+  t_butL   = 0x00; 
+
+  disp.print ("Jardim Autonomo");
+  delay (3000);
+  disp.clear();
+  disp.print (" Escolha o tipo ");
+  disp.setCursor(1,1);
+  disp.print ("  de planta:");
+  delay (4000);
+  disp.clear();
+
+
+  Serial.begin(9600);
+  valor_sensor = analogRead(sensor);
+  
+} 
+
+void loop()
+{
+   
+  mostrar_valores ();
+  changeMenu();
+  //dispMenu();
+   
+   switch(x)                                        
+    {
+       case 1:                                             
+       valor_sensor = analogRead(sensor);               
+       planta1();
+       delay (1000); 
+                                                
+       case 2:                                              
+       valor_sensor = analogRead(sensor);                
+       planta2();
+       delay (1000);   
+                                     
+       case 3:                                      
+       valor_sensor = analogRead(sensor);                
+       planta3();
+       delay (1000);                                    
+  } 
+}
+
+void changeMenu()                                      
+{
+   if(!digitalRead(butR))   t_butR = 0x01;          
+   if(!digitalRead(butL))   t_butL = 0x01;              
+      
+   if(digitalRead(butR) && t_butR)                   
+   {                                                  
+      t_butR = 0x00;                                  
+      
+      disp.clear();                                    
+      menu++;                                          
+      
+      if(menu > 0x03) menu = 0x01;                     
+   
+   } //end butUp
+   
+   if(digitalRead(butL) && t_butL)                
+   {                                                    
+      t_butL = 0x00;                                
+      
+      disp.clear();                                    
+      menu--;                                          
+      
+      if(menu < 0x01) menu = 0x03;                    
+   
+   } //end butDown   
+
+} //end changeMenu
+
+void dispMenu()                                         
+{
+    switch(menu)                                        
+    {
+       case 0x01:                                    
+             planta_a();                             
+             
+             break;                                    
+       case 0x02:                                      
+             planta_b();                             
+             
+             break;                                     
+       case 0x03:                                      
+             planta_c();                                  
+            
+             break;                                     
+                                                        
+    
+    } //end switch menu
+
+} //end dispMenu
+
+void planta_a() //Planta solo seco                                       
+{
+   
+
+   disp.setCursor(0,0);                                 
+   disp.print("<    Cacto     >");
+ 
+   if(!digitalRead(butE)) t_butE = 0x01; 
+  
+   if(digitalRead(butE) && t_butE)                    
+   {                                                  
+      t_butE = 0x00;                                  
+   
+   disp.setCursor(1,1);                                
+   
+   disp.print("   (select)");
+
+   x = 1;  
+
+   }
+ } //end planta1
+
+void planta_b()   // Planta de solo médio 
+ 
+ {
+  
+   mostrar_valores ();
+   disp.setCursor(0,0);                                
+   disp.print("<   Begonia    >");
+  
+  
+   if(!digitalRead(butE)) t_butE = 0x01; 
+  
+    if(digitalRead(butE) && t_butE)                    
+   {                                                    
+      t_butE = 0x00;                                   
+    
+     
+   disp.setCursor(1,1);                               
+   
+   disp.print("   (select)");
+ 
+  x = 2;
+    } 
+ }
+
+
+void planta_c() //Planta solo umido                                     
+{  
+  
+   mostrar_valores ();
+   disp.setCursor(0,0);                                
+   disp.print("<    Hedera    >");                                
+   
+  
+    if(!digitalRead(butE)) t_butE = 0x01; 
+  
+    if(digitalRead(butE) && t_butE)                    
+   {                                                    
+      t_butE = 0x00;                                 
+   
+   disp.setCursor(1,1);                                 
+   
+   disp.print("   (select)");
+   x = 3;  
+   
+   
+      
+   } 
+}
+
+
+
+  void apagaleds()
+{
+  digitalWrite(led_vermelho, LOW);
+  digitalWrite(led_verde, LOW);
+}
+
+void planta1() 
+{ //
+    if ( valor_sensor > 0 && valor_sensor < 900) // Status: Ideal
+       {                    
+                 apagaleds();
+                 digitalWrite(led_verde, HIGH); 
+       } 
+    if (valor_sensor > 900 && valor_sensor < 1024) // Status: ruim - regar 
+       {                    
+                 apagaleds();
+                 digitalWrite(led_vermelho, HIGH);
+                 delay(1000);
+                 digitalWrite(bomba_LED, HIGH);
+                 delay(2000);
+                 digitalWrite(bomba_LED,LOW);              
+                 
+       } 
+  }
+
+
+void planta2() 
+{ 
+  valor_sensor = analogRead(sensor);
+  if (valor_sensor > 0 && valor_sensor < 700) // Status: Ideal
+       {                    
+                 apagaleds();
+                 digitalWrite(led_verde, HIGH); 
+       }
+
+   valor_sensor = analogRead(sensor);
+     if (valor_sensor > 700 && valor_sensor < 1024) // Status: ruim - regar 
+       {                    
+                 apagaleds();
+                 digitalWrite(led_vermelho, HIGH);
+                 delay(10000);
+                 digitalWrite(bomba_LED, HIGH);
+                 delay(10000);
+                 digitalWrite(bomba_LED,LOW);
+       }  
+}
+
+
+void planta3() 
+{ 
+  
+    if ( valor_sensor > 0 && valor_sensor < 500) // Status: Ideal
+       {                    
+                 apagaleds();
+                 digitalWrite(led_verde, HIGH); 
+       } 
+    if (valor_sensor > 500 && valor_sensor < 1024) // Status: ruim - regar 
+       {                    
+                 apagaleds();
+                 digitalWrite(led_vermelho, HIGH);
+                 delay(1000);
+                 digitalWrite(bomba_LED, HIGH);
+                 delay(10000);
+                 digitalWrite(bomba_LED,LOW);
+                 delay (10000);
+                 
+       } 
+  
+}
+
+
+void mostrar_valores ()
+
+{ 
+   Serial.print("Porta analogica: ");
+   Serial.print(valor_sensor); 
+}
